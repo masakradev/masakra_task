@@ -4,24 +4,26 @@ from pymongo import MongoClient
 from wincon import *
 
 # MongoDb config
-ip = 'localhost'
-port = 27017
-db_name = 'masakra'
-db_collection = 'task'
+IP = 'localhost'
+PORT = 27017
+DB_NAME = 'masakra'
+DB_COLLECTION = 'task'
 
 
 # Other
-version = "0.0.1"
+VERSION = "0.0.1"
 
 def GetTime():
     time_now = time.strftime("%H:%M:%S %d/%m/%Y")
     return time_now
 
+#Evrything about DB
 class db:
     def __init__(self):
-        self.client = MongoClient(ip, port) 
-        self.db = self.client[db_name]
-        self.coll = self.db[db_collection]
+        # Connection connection exception will be added
+        self.client = MongoClient(IP, PORT) 
+        self.db = self.client[DB_NAME]
+        self.coll = self.db[DB_COLLECTION]
 
     def checkId(self, id):
         ids = [x for x in self.coll.find({}, {'_id':0,'id':1})]
@@ -66,7 +68,7 @@ class db:
         }
         self.coll.insert_one(task_template)
 
-    
+# Task class, evrything about UI, commandline   
 class Task(db):
     def ui_refresh(self):
         self.tasks = self.getNonDoneTask()
@@ -75,7 +77,7 @@ class Task(db):
 
     def __init__(self):
         super().__init__()
-        # Few thiks for UI
+        # Ui init
         self.page_now = 1
         self.ui_refresh()
 
@@ -117,7 +119,6 @@ class Task(db):
             func(args)
             return
         func()
-
 
 
 def Interface():
@@ -163,7 +164,6 @@ def Interface():
         input_ = input(">")
 
 
-
 def Core():
     args_help = {
         'mtask': 'Uruchomienie interfejsu',
@@ -187,12 +187,8 @@ def Core():
                 print("Zadanie dodano")
                 return
     if len(sys.argv) == 1:
-        print("interface")
         Interface()
     print("Nieprawidłowe użycie, użyj --help by dowiedzieć się jak używać") 
-
-
-
 
 
 if __name__ == "__main__":
