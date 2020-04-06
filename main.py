@@ -146,7 +146,7 @@ def Interface():
                 Task_.ui_send_error("Nie ma takiej komendy, użyj help do sprawdzenia komand")
             input_ = None
                       
-        print("mTask by masakra(.dev), v%s" % (version))
+        print("mTask by masakra(.dev), v%s" % (VERSION))
         print("\n Id" + " "*2 + "Data" + " "*17 + "Task")
         tasks = Task_.getNonDoneTask()
         for task in tasks[(Task_.page_now-1)*10:Task_.page_now*10]:
@@ -192,5 +192,5 @@ def Core():
 
 
 if __name__ == "__main__":
-    print("mTask by masakra(.dev), v%s" % (version))
+    print("mTask by masakra(.dev), v%s" % (VERSION))
     Core()
