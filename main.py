@@ -1,6 +1,7 @@
 import sys
 import time
 from pymongo import MongoClient
+from wincon import *
 
 # MongoDb config
 ip = 'localhost'
@@ -21,6 +22,13 @@ class db:
         self.client = MongoClient(ip, port) 
         self.db = self.client[db_name]
         self.coll = self.db[db_collection]
+
+    def checkId(self, id):
+        ids = [x for x in self.coll.find({}, {'_id':0,'id':1})]
+        ids_tab = [x['id'] for x in ids]
+        if id in ids_tab:
+            return True
+        return False
     
     def getLastId(self):
         ids = [x for x in self.coll.find({}, {'_id':0,'id':1})]
@@ -32,9 +40,22 @@ class db:
 
     def getAllTask(self):
         tasks = [x for x in self.coll.find()]
-        for x in tasks:
-            print(x)
-    
+        return tasks
+
+    def getNonDoneTask(self):
+        tasks = [x for x in self.coll.find({'done':0}, {'_id':0})]
+        return tasks
+
+    def setTaskToDone(self, id__):
+        if self.checkId(id__):
+            self.coll.find_one_and_update(
+                {'id':id__},
+                {"$set": {"done": 1}}
+                )
+            return True
+        return False
+        
+        
     def insertTask(self, task_):
         # Adding Template
         task_template = {
@@ -47,14 +68,100 @@ class db:
 
     
 class Task(db):
+    def ui_refresh(self):
+        self.tasks = self.getNonDoneTask()
+        self.tasks_len = len(self.tasks)
+        self.page_len = int(self.tasks_len/10) + 1
+
     def __init__(self):
         super().__init__()
-        # Get taks list
+        # Few thiks for UI
+        self.page_now = 1
+        self.ui_refresh()
+
+    def ui_send_error(self, error):
+        gotoxy(0,15)
+        print("[Error] %s " % error)
+        gotoxy(0,0)
+
+    def ui_next(self):
+        if self.page_now + 1 >= self.page_len:
+            self.ui_send_error("Nie ma takiej strony")
+            return
+        self.page_now += 1
+    
+    def ui_prev(self):
+        if self.page_now - 1 == 0:
+            self.ui_send_error("Nie ma takiej strony")
+            return
+        self.page_now -= 1
+
+    def ui_add(self, args=None):
+        if not args:
+            self.ui_send_error("Ta komenda potrzebuje argumenty")
+            return
+        self.insertTask(args)
+        self.ui_refresh()
+
+    def ui_done(self, args=None):
+        print(args)
+        if not args:
+            self.ui_send_error("Ta komenda potrzebuje argumenty")
+            return
+        if not self.setTaskToDone(int(args)):
+            self.ui_send_error("Nie ma takiego id")
+        self.ui_refresh()
+
+    def do_function(self, func, args=None):
+        if args:
+            func(args)
+            return
+        func()
+
+
 
 def Interface():
-    Temp = Task()
-    Temp.insertTask("masakra cos tam")
-    Temp.insertTask("masakra cos taam 22")
+    Task_ = Task()
+    input_ = None
+    while True:
+        cls()
+        OFFSET = " "
+
+        commands = {
+            'next': Task_.ui_next,
+            'prev': Task_.ui_prev,
+            'add': Task_.ui_add,
+            'done': Task_.ui_done,
+        }
+
+        if input_:
+            if input_.split()[0] in commands.keys():
+                if len(input_.split()) > 1:
+                    args = " ".join(input_.split()[1:])
+                    Task_.do_function(commands[input_.split()[0]], args)
+                else:
+                    Task_.do_function(commands[input_.split()[0]])
+            else:
+                Task_.ui_send_error("Nie ma takiej komendy, użyj help do sprawdzenia komand")
+            input_ = None
+                      
+        print("mTask by masakra(.dev), v%s" % (version))
+        print("\n Id" + " "*2 + "Data" + " "*17 + "Task")
+        tasks = Task_.getNonDoneTask()
+        for task in tasks[(Task_.page_now-1)*10:Task_.page_now*10]:
+            print(" %s%s %s%s %s" %
+                (
+                    task['id'], OFFSET * (3 - len(str(task['id']))),
+                    task['task_time'], OFFSET * (20 -len(task['task_time'])),
+                    task['task_body']
+                )
+            )
+
+        gotoxy(0,14)
+        print("Strona: %s/%s" % (Task_.page_now, Task_.page_len))
+        gotoxy(0,16)
+        input_ = input(">")
+
 
 
 def Core():
@@ -82,8 +189,7 @@ def Core():
     if len(sys.argv) == 1:
         print("interface")
         Interface()
-    else:
-        print("Nieprawidłowe użycie, użyj --help by dowiedzieć się jak używać") 
+    print("Nieprawidłowe użycie, użyj --help by dowiedzieć się jak używać") 
 
 
 
