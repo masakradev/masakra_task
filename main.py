@@ -114,11 +114,8 @@ class Task(db):
             self.ui_send_error("Nie ma takiego id")
         self.ui_refresh()
 
-    def do_function(self, func, args=None):
-        if args:
-            func(args)
-            return
-        func()
+    def do_function(self, func, *args):
+        func(*args)
 
 
 def Interface():
